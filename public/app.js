@@ -7887,6 +7887,9 @@ const MusicRoomPlayer = (() => {
   let playerContainer = null;
   let currentVideoEl = null;
   let queueListEl = null;
+
+  let lyricsPanelEl = null;
+  let lyricsVisible = false;
   let apiReadyPromise = null;
   let currentVideo = null;
   let queue = [];
@@ -7984,6 +7987,7 @@ const MusicRoomPlayer = (() => {
             <button class="iconBtn" id="musicSkipBtn" title="Skip to next" aria-label="Skip to next">⏭</button>
             <button class="iconBtn" id="musicAudioOnlyBtn" title="Audio only mode" aria-label="Audio only mode">🎵</button>
             <button class="iconBtn" id="musicLowQualityBtn" title="Low quality mode" aria-label="Low quality mode">📶</button>
+            <button class="iconBtn" id="musicLyricsBtn" title="Toggle lyrics" aria-label="Toggle lyrics">📝</button>
           </div>
         </div>
         <div class="musicPlayerBody">
@@ -7992,6 +7996,7 @@ const MusicRoomPlayer = (() => {
         <div class="musicCurrentVideo" id="musicCurrentVideo">
           <div class="musicCurrentTitle">Nothing playing</div>
         </div>
+        <div class="musicLyricsPanel" id="musicLyricsPanel" hidden></div>
         <div class="musicQueue" id="musicQueue">
           <div class="musicQueueHeader">Queue</div>
           <div class="musicQueueList" id="musicQueueList"></div>
@@ -8004,12 +8009,14 @@ const MusicRoomPlayer = (() => {
     
     currentVideoEl = document.getElementById("musicCurrentVideo");
     queueListEl = document.getElementById("musicQueueList");
+    lyricsPanelEl = document.getElementById("musicLyricsPanel");
     
     // Setup controls
     const collapseBtn = document.getElementById("musicCollapseBtn");
     const skipBtn = document.getElementById("musicSkipBtn");
     const audioOnlyBtn = document.getElementById("musicAudioOnlyBtn");
     const lowQualityBtn = document.getElementById("musicLowQualityBtn");
+    const lyricsBtn = document.getElementById("musicLyricsBtn");
     
     if (collapseBtn) {
       collapseBtn.addEventListener("click", () => {
@@ -8032,6 +8039,12 @@ const MusicRoomPlayer = (() => {
     if (lowQualityBtn) {
       lowQualityBtn.addEventListener("click", () => {
         toggleLowQuality();
+      });
+    }
+    if (lyricsBtn) {
+      lyricsBtn.addEventListener("click", () => {
+        lyricsVisible = !lyricsVisible;
+        if (lyricsPanelEl) lyricsPanelEl.hidden = !lyricsVisible;
       });
     }
     
@@ -8060,6 +8073,7 @@ const MusicRoomPlayer = (() => {
       
       const audioOnlyBtn = document.getElementById("musicAudioOnlyBtn");
       const lowQualityBtn = document.getElementById("musicLowQualityBtn");
+    const lyricsBtn = document.getElementById("musicLyricsBtn");
       
       if (audioOnlyBtn) {
         audioOnlyBtn.classList.toggle("active", audioOnly);
@@ -8125,6 +8139,7 @@ const MusicRoomPlayer = (() => {
   function toggleLowQuality() {
     try {
       const lowQualityBtn = document.getElementById("musicLowQualityBtn");
+    const lyricsBtn = document.getElementById("musicLyricsBtn");
       const isActive = lowQualityBtn?.classList.toggle("active");
       localStorage.setItem(LOW_QUALITY_KEY, isActive ? "true" : "false");
       applyQualitySettings();
@@ -8529,7 +8544,7 @@ const MusicRoomPlayer = (() => {
     autoplayAttempted = false;
   }
 
-  async function playVideo(videoId, title, addedBy, startedAt) {
+  async function playVideo(videoId, title, addedBy, startedAt, artist, albumArt, duration) {
     // Wait until any in-progress load has fully completed before continuing.
     // This loops instead of using a single fixed delay to avoid overlapping loads
     // when the first load takes longer than OVERLAP_PREVENTION_DELAY_MS.
@@ -8543,16 +8558,24 @@ const MusicRoomPlayer = (() => {
       initDom();
       show();
       
-      currentVideo = { videoId, title, addedBy, startedAt };
+      currentVideo = { videoId, title, addedBy, startedAt, artist: arguments[4], albumArt: arguments[5], duration: arguments[6] };
       
       // Update current video display
       if (currentVideoEl) {
         currentVideoEl.innerHTML = `
           <div class="musicCurrentTitle">${escapeHtml(title)}</div>
-          <div class="musicCurrentMeta">Added by ${escapeHtml(addedBy)}</div>
+          <div class="musicCurrentMeta">Added by ${escapeHtml(addedBy)} • ${escapeHtml(currentVideo.artist || "Unknown Artist")}</div>
         `;
       }
       
+      if (lyricsPanelEl && artist && title) {
+        socket?.emit("music:lyrics:get", { artist, title }, (res) => {
+          if (!lyricsPanelEl) return;
+          const text = res?.lyrics || "Lyrics unavailable.";
+          lyricsPanelEl.textContent = text;
+        });
+      }
+
       await ensurePlayer();
       
       if (player) {
@@ -8623,13 +8646,17 @@ const MusicRoomPlayer = (() => {
     
     queueListEl.innerHTML = queue.map((item, index) => `
       <div class="musicQueueItem">
+        <button class="iconBtn musicQueueRemove" data-id="${item.id}" title="Remove">✖</button>
         <div class="musicQueueIndex">${index + 1}</div>
         <div class="musicQueueInfo">
           <div class="musicQueueTitle">${escapeHtml(item.title)}</div>
-          <div class="musicQueueMeta">Added by ${escapeHtml(item.addedBy)}</div>
+          <div class="musicQueueMeta">Added by ${escapeHtml(item.addedBy)}${item.artist ? ` • ${escapeHtml(item.artist)}` : ""}</div>
         </div>
       </div>
     `).join('');
+    queueListEl.querySelectorAll('.musicQueueRemove').forEach((btn)=>{
+      btn.addEventListener('click', ()=> socket?.emit('music:queue:remove', { id: Number(btn.dataset.id) }));
+    });
   }
 
   function stop() {
@@ -27658,7 +27685,7 @@ socket.on("mod:case_event", (payload = {}) => {
   // Music Room Player events
   socket.on("music:play", (payload) => {
     if (currentRoom === "music") {
-      MusicRoomPlayer.playVideo(payload.videoId, payload.title, payload.addedBy, payload.startedAt);
+      MusicRoomPlayer.playVideo(payload.videoId, payload.title, payload.addedBy, payload.startedAt, payload.artist, payload.albumArt, payload.duration);
     }
   });
 
