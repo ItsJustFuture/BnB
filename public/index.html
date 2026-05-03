@@ -3097,7 +3097,7 @@
       <div class="musicRoomNow">
         <span class="musicRoomDot" aria-hidden="true"></span>
         <strong id="musicRoomExperienceTitle">Music Room</strong>
-        <span class="musicRoomSyncBadge" id="musicSyncBadge">Synced • 00:42</span>
+        <span class="musicRoomSyncBadge" id="musicSyncBadge">Synced • 00:00 / 00:00</span>
       </div>
       <div class="musicRoomTopActions">
         <button class="iconBtn" id="musicRoomToggleLyrics" type="button" aria-pressed="true">Lyrics</button>
@@ -3107,33 +3107,31 @@
 
     <div class="musicRoomLayout">
       <aside class="musicQueuePanel" id="musicQueuePanel">
-        <header><strong>Up Next</strong><span>8 tracks</span></header>
-        <ul class="musicQueueList">
-          <li class="active" draggable="true"><img src="/icons/3410/gem-01.png" alt=""><div><strong>Midnight Echo</strong><span>Luma Sky • added by Kai</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
-          <li draggable="true"><img src="/icons/3410/gem-02.png" alt=""><div><strong>Velvet Neon</strong><span>Norell • added by Ivy</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
-          <li draggable="true"><img src="/icons/3410/gem-03.png" alt=""><div><strong>Pulse Lane</strong><span>Astra • added by Ren</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
-        </ul>
+        <header><strong>Up Next</strong><span>Room Queue</span></header>
+        <div class="musicQueueList" id="musicQueueList"></div>
       </aside>
       <section class="musicPlayerSection">
-        <div class="musicAlbumArt"><img src="/icons/3410/gem-16.png" alt="Album art"></div>
-        <div class="musicTrackMeta"><h3>Midnight Echo</h3><p>Luma Sky • Night Shift Deluxe</p></div>
-        <div class="musicProgressWrap"><div class="musicProgressBar"><span style="width:42%"></span></div><div class="musicProgressTime"><span>1:24</span><span>3:20</span></div></div>
-        <div class="musicControlRow"><button>⏮</button><button class="play">⏯</button><button>⏭</button><label>🔊<input type="range" min="0" max="100" value="70"></label><button>⚙</button></div>
-      </section>
-      <aside class="musicLyricsPanel" id="musicLyricsPanel">
-        <header><strong>Lyrics</strong><label><input type="checkbox" id="lyricsSyncToggle" checked> Sync</label></header>
-        <div class="musicLyricsBody">
-          <p>City lights are fading slow</p>
-          <p class="active">Hold the line, don’t let it go</p>
-          <p>Hearts in rhythm, breathing sound</p>
-          <p>All our shadows hit the ground</p>
+        <div class="musicAlbumArt"><img id="musicAlbumArtImage" src="/icons/3410/gem-16.png" alt="Album art"></div>
+        <div id="musicPlayerFrame"></div>
+        <div class="musicCurrentVideo" id="musicCurrentVideo"><div class="musicCurrentTitle">Nothing playing</div></div>
+        <div class="musicProgressWrap"><div class="musicProgressTime"><span id="musicTimeDisplay">00:00 / 00:00</span></div></div>
+        <div class="musicControlRow">
+          <button class="iconBtn" id="musicCollapseBtn" title="Close music room" aria-label="Close music room">✕</button>
+          <button class="iconBtn" id="musicSkipBtn" title="Skip to next" aria-label="Skip to next">⏭</button>
+          <button class="iconBtn" id="musicAudioOnlyBtn" title="Audio only mode" aria-label="Audio only mode">🎵</button>
+          <button class="iconBtn" id="musicLowQualityBtn" title="Low quality mode" aria-label="Low quality mode">📶</button>
+          <button class="iconBtn" id="musicLyricsBtn" title="Toggle lyrics" aria-label="Toggle lyrics">📝</button>
         </div>
+      </section>
+      <aside class="musicLyricsPanel" id="musicRoomLyricsPanel">
+        <header><strong>Lyrics</strong><small>Live</small></header>
+        <div class="musicLyricsBody" id="musicLyricsContent"><p>Lyrics unavailable.</p></div>
       </aside>
     </div>
 
     <section class="musicChatPanel" id="musicChatPanel">
       <header><strong>Room Chat</strong></header>
-      <div class="musicChatMessages"><p><b>Nora:</b> this drop is perfect</p><p><b>Axel:</b> syncing lyrics now 🎤</p></div>
+      <div class="musicChatMessages"><p><b>System:</b> Music playback is shared across the room.</p></div>
     </section>
 
     <nav class="musicRoomMobileTabs" aria-label="Music room sections">
