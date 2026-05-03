@@ -4507,6 +4507,7 @@ if (IS_DEV && dndNewOpenBtn) {
 
 // Music Controls elements
 const musicControlsBtn = document.getElementById("musicControlsBtn");
+const musicPlayerToggleBtn = document.getElementById("musicPlayerToggleBtn");
 const musicControlsModal = document.getElementById("musicControlsModal");
 const musicControlsClose = document.getElementById("musicControlsClose");
 const voteSkipBtn = document.getElementById("voteSkipBtn");
@@ -6624,6 +6625,12 @@ function handleVolumeChange(value) {
 if (musicControlsBtn) {
   musicControlsBtn.addEventListener("click", openMusicControlsModal);
 }
+if (musicPlayerToggleBtn) {
+  musicPlayerToggleBtn.addEventListener("click", () => {
+    if (currentRoom !== "music") return;
+    MusicRoomPlayer.toggle();
+  });
+}
 
 if (musicControlsClose) {
   musicControlsClose.addEventListener("click", closeMusicControlsModal);
@@ -8545,6 +8552,7 @@ const MusicRoomPlayer = (() => {
       playerContainer.style.display = "flex";
       playerContainer.hidden = false;
       playerContainer.classList.add("modal-visible");
+      playerContainer.classList.remove("minimized");
     }
     
     // Start periodic autoplay checking (in case autoplay was blocked)
@@ -8556,10 +8564,18 @@ const MusicRoomPlayer = (() => {
   }
 
   function hide() {
+    if (playerContainer && currentRoom === "music") {
+      playerContainer.style.display = "flex";
+      playerContainer.hidden = false;
+      playerContainer.classList.add("modal-visible");
+      playerContainer.classList.add("minimized");
+      return;
+    }
     if (playerContainer) {
       playerContainer.style.display = "none";
       playerContainer.hidden = true;
       playerContainer.classList.remove("modal-visible");
+      playerContainer.classList.remove("minimized");
     }
     if (player) {
       try { player.stopVideo?.(); } catch (err) { clientLogger.warn("Suppressed client error", err); }
@@ -8849,6 +8865,12 @@ const MusicRoomPlayer = (() => {
   return {
     show,
     hide,
+    toggle: () => {
+      initDom();
+      const minimized = playerContainer?.classList.contains("minimized");
+      if (playerContainer?.hidden || minimized) show();
+      else hide();
+    },
     playVideo,
     updateQueue,
     stop,
@@ -18173,9 +18195,11 @@ function joinRoom(room){
       }
     });
     // Show music controls button in music room
+    if (musicPlayerToggleBtn) musicPlayerToggleBtn.hidden = false;
   } else {
     MusicRoomPlayer.hide();
     // Hide music controls button outside music room
+    if (musicPlayerToggleBtn) musicPlayerToggleBtn.hidden = true;
     // Close music controls modal when leaving music room
     closeMusicControlsModal();
   }
