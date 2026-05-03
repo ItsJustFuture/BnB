@@ -16867,3 +16867,12 @@ body[data-theme="Iris & Lola Neon"] .irisLolaDrawerEasterStar{
 
 @media (min-width: 769px) and (max-width: 1024px){ .topbar{ padding:0 var(--space-3); } }
 @media (min-width: 1025px){ .topbar{ padding:0 var(--space-3); } }
+.ytEmbedAspect{position:relative;aspect-ratio:16/9;width:100%;background:#111;border-radius:12px;overflow:hidden}
+.ytEmbedPoster,.ytEmbedPlayer,.ytEmbedPlayer iframe,.ytEmbedError{position:absolute;inset:0;width:100%;height:100%}
+.ytEmbedPoster{background-size:cover;background-position:center;border:0;cursor:pointer}
+.ytEmbedError{display:grid;place-content:center;gap:8px;color:#fff;background:#1b1b1b}
+.ytEmbedControls{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:8px;background:linear-gradient(transparent,rgba(0,0,0,.75));opacity:0;transition:opacity .2s}
+.ytEmbed:hover .ytEmbedControls{opacity:1}
+.ytEmbed .ytPlay,.ytEmbed .ytMute,.ytEmbed .ytFs,.ytEmbed summary{min-width:44px;min-height:44px}
+.ytSeek,.ytVolume{flex:1}
+@media (max-width: 768px){.ytEmbedControls{opacity:1}.ytVolume,.ytTime{display:none}.ytSecondary{display:grid;gap:8px;background:#000d;padding:8px;border-radius:8px;position:absolute;right:0;bottom:48px}}
