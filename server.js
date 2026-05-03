@@ -74,7 +74,7 @@ const VALID_DND_ROOM_NAMES = ["dnd", "dndstoryroom", "dndstory", "justdnd"];
 
 // Music Room Global Player Queue
 const MUSIC_ROOM_QUEUE = {
-  queue: [], // Array of { videoId, title, addedBy, addedAt, queueId }
+  queue: [], // Array of { id, videoId, title, duration, thumbnail, addedBy, votes, artist, albumArt }
   currentVideo: null, // { videoId, title, startedAt, addedBy }
   nowPlaying: false,
   nextQueueId: 1, // Counter for queue ordering
@@ -86,6 +86,8 @@ const MUSIC_ROOM_QUEUE = {
   elapsedBeforePause: 0, // Seconds elapsed before pause
   syncInterval: null  // Store interval ID for cleanup
 };
+const MUSIC_METADATA_CACHE = new Map();
+const MUSIC_LYRICS_CACHE = new Map();
 const MUSIC_QUEUE_MAX_SIZE = 100; // Maximum queue size
 
 // Music sync timing constants
@@ -233,6 +235,45 @@ async function fetchYouTubeTitle(videoId) {
   }
 }
 
+async function fetchTrackMetadata(videoId) {
+  const cacheKey = String(videoId || "").trim();
+  if (!cacheKey) return null;
+  if (MUSIC_METADATA_CACHE.has(cacheKey)) return MUSIC_METADATA_CACHE.get(cacheKey);
+  try {
+    const url = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    const meta = {
+      artist: data?.author_name || "Unknown Artist",
+      albumArt: data?.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      thumbnail: data?.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      duration: null
+    };
+    MUSIC_METADATA_CACHE.set(cacheKey, meta);
+    return meta;
+  } catch (_err) {
+    return null;
+  }
+}
+
+async function fetchLyrics(artist, title) {
+  const key = `${String(artist || "").toLowerCase()}::${String(title || "").toLowerCase()}`;
+  if (!artist || !title) return null;
+  if (MUSIC_LYRICS_CACHE.has(key)) return MUSIC_LYRICS_CACHE.get(key);
+  try {
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    const lyrics = data?.lyrics || null;
+    if (lyrics) MUSIC_LYRICS_CACHE.set(key, lyrics);
+    return lyrics;
+  } catch (_err) {
+    return null;
+  }
+}
+
 // Helper to shuffle an array using Fisher-Yates algorithm
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -368,10 +409,14 @@ function skipToNextVideo(io) {
   if (MUSIC_ROOM_QUEUE.queue.length > 0) {
     const video = MUSIC_ROOM_QUEUE.queue.shift();
     MUSIC_ROOM_QUEUE.currentVideo = {
+      id: video.id,
       videoId: video.videoId,
       title: video.title,
       startedAt: Date.now(),
-      addedBy: video.addedBy
+      addedBy: video.addedBy,
+      artist: video.artist || "Unknown Artist",
+      albumArt: video.albumArt || video.thumbnail || null,
+      duration: video.duration || null
     };
     MUSIC_ROOM_QUEUE.nowPlaying = true;
     
@@ -385,7 +430,10 @@ function skipToNextVideo(io) {
       videoId: video.videoId,
       title: video.title,
       addedBy: video.addedBy,
-      startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt
+      startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt,
+      artist: MUSIC_ROOM_QUEUE.currentVideo.artist,
+      albumArt: MUSIC_ROOM_QUEUE.currentVideo.albumArt,
+      duration: MUSIC_ROOM_QUEUE.currentVideo.duration
     });
     
     // Start sync broadcast now that video playback has begun
@@ -20754,17 +20802,28 @@ if (!room) {
                   // Add to queue with placeholder title first to preserve order
                   const queueId = MUSIC_ROOM_QUEUE.nextQueueId++;
                   const queueEntry = {
+                    id: queueId,
                     videoId,
                     title: "Loading...",
+                    duration: null,
+                    thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
                     addedBy: socket.user.username,
                     addedAt: Date.now(),
-                    queueId
+                    queueId,
+                    votes: 0
                   };
                   MUSIC_ROOM_QUEUE.queue.push(queueEntry);
 
                   // Fetch title asynchronously and update
                   const title = await fetchYouTubeTitle(videoId) || "Unknown Video";
                   queueEntry.title = title;
+                  const metadata = await fetchTrackMetadata(videoId);
+                  if (metadata) {
+                    queueEntry.artist = metadata.artist;
+                    queueEntry.albumArt = metadata.albumArt;
+                    queueEntry.thumbnail = metadata.thumbnail || queueEntry.thumbnail;
+                    queueEntry.duration = metadata.duration || null;
+                  }
 
                   // Send system message using emitRoomSystem
                   emitRoomSystem(room, `${socket.user.username} added: ${title}`);
@@ -20773,10 +20832,14 @@ if (!room) {
                   if (!MUSIC_ROOM_QUEUE.currentVideo && MUSIC_ROOM_QUEUE.queue.length === 1) {
                     const video = MUSIC_ROOM_QUEUE.queue.shift();
                     MUSIC_ROOM_QUEUE.currentVideo = {
+                      id: video.id,
                       videoId: video.videoId,
                       title: video.title,
                       startedAt: Date.now(),
-                      addedBy: video.addedBy
+                      addedBy: video.addedBy,
+                      artist: video.artist || "Unknown Artist",
+                      albumArt: video.albumArt || video.thumbnail || null,
+                      duration: video.duration || null
                     };
                     MUSIC_ROOM_QUEUE.nowPlaying = true;
                     
@@ -20791,7 +20854,10 @@ if (!room) {
                       videoId: video.videoId,
                       title: video.title,
                       addedBy: video.addedBy,
-                      startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt
+                      startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt,
+                      artist: MUSIC_ROOM_QUEUE.currentVideo.artist,
+                      albumArt: MUSIC_ROOM_QUEUE.currentVideo.albumArt,
+                      duration: MUSIC_ROOM_QUEUE.currentVideo.duration
                     });
                     
                     // Start periodic sync broadcast
@@ -21037,10 +21103,14 @@ if (!room) {
     if (MUSIC_ROOM_QUEUE.queue.length > 0) {
       const video = MUSIC_ROOM_QUEUE.queue.shift();
       MUSIC_ROOM_QUEUE.currentVideo = {
+        id: video.id,
         videoId: video.videoId,
         title: video.title,
         startedAt: Date.now(),
-        addedBy: video.addedBy
+        addedBy: video.addedBy,
+        artist: video.artist || "Unknown Artist",
+        albumArt: video.albumArt || video.thumbnail || null,
+        duration: video.duration || null
       };
       MUSIC_ROOM_QUEUE.nowPlaying = true;
       
@@ -21054,7 +21124,10 @@ if (!room) {
         videoId: video.videoId,
         title: video.title,
         addedBy: video.addedBy,
-        startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt
+        startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt,
+        artist: MUSIC_ROOM_QUEUE.currentVideo.artist,
+        albumArt: MUSIC_ROOM_QUEUE.currentVideo.albumArt,
+        duration: MUSIC_ROOM_QUEUE.currentVideo.duration
       });
       
       // Start periodic sync broadcast
@@ -21095,10 +21168,14 @@ if (!room) {
     if (MUSIC_ROOM_QUEUE.queue.length > 0) {
       const video = MUSIC_ROOM_QUEUE.queue.shift();
       MUSIC_ROOM_QUEUE.currentVideo = {
+        id: video.id,
         videoId: video.videoId,
         title: video.title,
         startedAt: Date.now(),
-        addedBy: video.addedBy
+        addedBy: video.addedBy,
+        artist: video.artist || "Unknown Artist",
+        albumArt: video.albumArt || video.thumbnail || null,
+        duration: video.duration || null
       };
       MUSIC_ROOM_QUEUE.nowPlaying = true;
       
@@ -21112,7 +21189,10 @@ if (!room) {
         videoId: video.videoId,
         title: video.title,
         addedBy: video.addedBy,
-        startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt
+        startedAt: MUSIC_ROOM_QUEUE.currentVideo.startedAt,
+        artist: MUSIC_ROOM_QUEUE.currentVideo.artist,
+        albumArt: MUSIC_ROOM_QUEUE.currentVideo.albumArt,
+        duration: MUSIC_ROOM_QUEUE.currentVideo.duration
       });
       
       // Start periodic sync broadcast
@@ -21212,6 +21292,32 @@ if (!room) {
         }
       });
     }
+  });
+
+  socket.on("music:queue:remove", ({ id } = {}) => {
+    if (socket.currentRoom !== "music") return;
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) return;
+    MUSIC_ROOM_QUEUE.queue = MUSIC_ROOM_QUEUE.queue.filter((item) => Number(item.id) !== targetId);
+    io.to("music").emit("music:queue", { queue: MUSIC_ROOM_QUEUE.queue, current: MUSIC_ROOM_QUEUE.currentVideo });
+  });
+
+  socket.on("music:queue:reorder", ({ fromIndex, toIndex } = {}) => {
+    if (socket.currentRoom !== "music") return;
+    if (!isMusicModerator(socket.user)) return;
+    const from = Number(fromIndex);
+    const to = Number(toIndex);
+    if (!Number.isInteger(from) || !Number.isInteger(to)) return;
+    if (from < 0 || to < 0 || from >= MUSIC_ROOM_QUEUE.queue.length || to >= MUSIC_ROOM_QUEUE.queue.length) return;
+    const [moved] = MUSIC_ROOM_QUEUE.queue.splice(from, 1);
+    MUSIC_ROOM_QUEUE.queue.splice(to, 0, moved);
+    io.to("music").emit("music:queue", { queue: MUSIC_ROOM_QUEUE.queue, current: MUSIC_ROOM_QUEUE.currentVideo });
+  });
+
+  socket.on("music:lyrics:get", async ({ artist, title } = {}, ack) => {
+    if (socket.currentRoom !== "music") return;
+    const lyrics = await fetchLyrics(artist, title);
+    if (typeof ack === "function") ack({ ok: true, lyrics: lyrics || "" });
   });
 
   // Music voting handlers
