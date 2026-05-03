@@ -6494,6 +6494,11 @@ function closeMusicControlsModal() {
 }
 
 function updateMusicControlsUI() {
+  const mrSkipCount = document.getElementById("mrSkipCount");
+  const mrPauseCount = document.getElementById("mrPauseCount");
+  const mrShuffleCount = document.getElementById("mrShuffleCount");
+  const mrClearCount = document.getElementById("mrClearCount");
+  const mrLoopBtn = document.getElementById("mrLoopBtn");
   // Update vote counts
   if (skipVoteCount) {
     const count = musicControlsState.skipVotes.size;
@@ -6511,6 +6516,10 @@ function updateMusicControlsUI() {
     const count = musicControlsState.shuffleVotes.size;
     shuffleVoteCount.textContent = count === 1 ? "1 vote" : `${count} votes`;
   }
+  if (mrSkipCount) mrSkipCount.textContent = String(musicControlsState.skipVotes.size);
+  if (mrPauseCount) mrPauseCount.textContent = String(musicControlsState.pauseVotes.size);
+  if (mrShuffleCount) mrShuffleCount.textContent = String(musicControlsState.shuffleVotes.size);
+  if (mrClearCount) mrClearCount.textContent = String(musicControlsState.clearVotes.size);
   
   // Update button states
   if (voteSkipBtn) {
@@ -6540,6 +6549,10 @@ function updateMusicControlsUI() {
   if (loopStatus && loopVideoBtn) {
     loopStatus.textContent = musicControlsState.loopEnabled ? "On" : "Off";
     loopVideoBtn.classList.toggle("active", musicControlsState.loopEnabled);
+  }
+  if (mrLoopBtn) {
+    mrLoopBtn.classList.toggle("active", musicControlsState.loopEnabled);
+    mrLoopBtn.setAttribute("aria-pressed", String(musicControlsState.loopEnabled));
   }
 }
 
@@ -7581,8 +7594,8 @@ const StickyYouTubePlayer = (()=>{
       stickyMount.style.cssText = "width:100%;height:100%;";
       playerHolder.appendChild(stickyMount);
       player = new YT.Player(stickyMount, {
-        height: "180",
-        width: "320",
+        height: "100%",
+        width: "100%",
         host: "https://www.youtube-nocookie.com",
         playerVars: { playsinline:1, controls:0, modestbranding:1, rel:0, autoplay:0, enablejsapi:1, origin: window.location.origin },
         events: {
@@ -7895,11 +7908,13 @@ const MusicRoomPlayer = (() => {
   let playerContainer = null;
   let musicModalEl = null;
   let lyricsCache = new Map();
-  let timeDisplayEl = null;
+  let currentTimeEl = null;
+  let durationEl = null;
   let syncBadgeEl = null;
   let albumArtEl = null;
   let timeTicker = null;
   let currentVideoEl = null;
+  let currentVideoMetaEl = null;
   let queueListEl = null;
 
   let lyricsPanelEl = null;
@@ -7982,23 +7997,25 @@ const MusicRoomPlayer = (() => {
     }
     window.musicPlayer = { container };
     
-    currentVideoEl = document.getElementById("musicCurrentVideo");
-    queueListEl = document.getElementById("musicQueueList");
-    lyricsPanelEl = document.getElementById("musicRoomLyricsPanel");
-    timeDisplayEl = document.getElementById("musicTimeDisplay");
-    syncBadgeEl = document.getElementById("musicSyncBadge");
-    albumArtEl = document.getElementById("musicAlbumArtImage");
+    currentVideoEl = document.getElementById("mrTrackTitle");
+    currentVideoMetaEl = document.getElementById("mrTrackMeta");
+    queueListEl = document.getElementById("mrQueueList");
+    lyricsPanelEl = document.getElementById("mrLyricsPanel");
+    currentTimeEl = document.getElementById("mrCurrentTime");
+    durationEl = document.getElementById("mrDuration");
+    syncBadgeEl = document.getElementById("mrSyncBadge");
+    albumArtEl = document.getElementById("mrAlbumImg");
     
     // Setup controls
-    const collapseBtn = document.getElementById("musicCollapseBtn");
-    const skipBtn = document.getElementById("musicSkipBtn");
-    const audioOnlyBtn = document.getElementById("musicAudioOnlyBtn");
-    const lowQualityBtn = document.getElementById("musicLowQualityBtn");
-    const lyricsBtn = document.getElementById("musicLyricsBtn");
+    const collapseBtn = document.getElementById("mrCloseBtn");
+    const skipBtn = document.getElementById("mrSkipBtn");
+    const audioOnlyBtn = document.getElementById("mrAudioOnlyBtn");
+    const lowQualityBtn = document.getElementById("mrLowQualBtn");
+    const lyricsBtn = document.getElementById("mrLyricsToggle");
     
     if (collapseBtn) {
       collapseBtn.addEventListener("click", () => {
-        const closeBtn = document.getElementById("musicRoomClose");
+        const closeBtn = document.getElementById("mrCloseBtn");
         closeBtn?.click();
       });
     }
@@ -8008,6 +8025,7 @@ const MusicRoomPlayer = (() => {
         socket?.emit("music:next");
       });
     }
+    document.getElementById("mrCloseBtn")?.addEventListener("click", hide);
     
     if (audioOnlyBtn) {
       audioOnlyBtn.addEventListener("click", () => {
@@ -8023,9 +8041,32 @@ const MusicRoomPlayer = (() => {
     if (lyricsBtn) {
       lyricsBtn.addEventListener("click", () => {
         lyricsVisible = !lyricsVisible;
+        lyricsBtn.setAttribute("aria-pressed", String(lyricsVisible));
         if (lyricsPanelEl) lyricsPanelEl.classList.toggle("is-hidden", !lyricsVisible);
       });
     }
+    document.getElementById("mrLoopBtn")?.addEventListener("click", handleLoopToggle);
+    document.getElementById("mrVoteSkip")?.addEventListener("click", () => handleMusicVote("skip"));
+    document.getElementById("mrVotePause")?.addEventListener("click", () => handleMusicVote("pause"));
+    document.getElementById("mrVoteShuffle")?.addEventListener("click", () => handleMusicVote("shuffle"));
+    document.getElementById("mrVoteClear")?.addEventListener("click", () => handleMusicVote("clear"));
+    document.getElementById("mrVolumeSlider")?.addEventListener("input", (e) => handleVolumeChange(e.target.value));
+    document.getElementById("mrMuteBtn")?.addEventListener("click", () => {
+      if (!player) return;
+      if (player.isMuted?.()) {
+        player.unMute?.();
+      } else {
+        player.mute?.();
+      }
+    });
+    document.querySelectorAll("[data-mr-tab]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const selected = tab.dataset.mrTab;
+        document.querySelectorAll("[data-mr-tab]").forEach((t) => t.classList.toggle("active", t === tab));
+        document.getElementById("mrQueuePanel")?.classList.toggle("mobile-active", selected === "queue");
+        lyricsPanelEl?.classList.toggle("mobile-active", selected === "lyrics");
+      });
+    });
     
     // Load saved preferences
     loadUserPreferences();
@@ -8037,22 +8078,25 @@ const MusicRoomPlayer = (() => {
       const lowQuality = localStorage.getItem(LOW_QUALITY_KEY) === "true";
       const collapsed = localStorage.getItem(COLLAPSED_KEY) === "true";
       
-      const audioOnlyBtn = document.getElementById("musicAudioOnlyBtn");
-      const lowQualityBtn = document.getElementById("musicLowQualityBtn");
-    const lyricsBtn = document.getElementById("musicLyricsBtn");
+      const audioOnlyBtn = document.getElementById("mrAudioOnlyBtn");
+      const lowQualityBtn = document.getElementById("mrLowQualBtn");
+    const lyricsBtn = document.getElementById("mrLyricsToggle");
       
       if (audioOnlyBtn) {
         audioOnlyBtn.classList.toggle("active", audioOnly);
+        audioOnlyBtn.setAttribute("aria-pressed", String(audioOnly));
+        document.querySelector(".mrCard")?.classList.toggle("audio-only", audioOnly);
       }
       
       if (lowQualityBtn) {
         lowQualityBtn.classList.toggle("active", lowQuality);
+        lowQualityBtn.setAttribute("aria-pressed", String(lowQuality));
       }
       
       // Apply collapsed state
       if (collapsed && playerContainer) {
         playerContainer.classList.add("collapsed");
-        const collapseBtn = document.getElementById("musicCollapseBtn");
+        const collapseBtn = document.getElementById("mrCloseBtn");
         if (collapseBtn) {
           collapseBtn.textContent = "▲";
           collapseBtn.title = "Expand player";
@@ -8071,7 +8115,7 @@ const MusicRoomPlayer = (() => {
       if (!playerContainer) return;
       
       const isCollapsed = playerContainer.classList.toggle("collapsed");
-      const collapseBtn = document.getElementById("musicCollapseBtn");
+      const collapseBtn = document.getElementById("mrCloseBtn");
       
       if (collapseBtn) {
         collapseBtn.textContent = isCollapsed ? "▲" : "▼";
@@ -8087,8 +8131,10 @@ const MusicRoomPlayer = (() => {
 
   function toggleAudioOnly() {
     try {
-      const audioOnlyBtn = document.getElementById("musicAudioOnlyBtn");
+      const audioOnlyBtn = document.getElementById("mrAudioOnlyBtn");
       const isActive = audioOnlyBtn?.classList.toggle("active");
+      audioOnlyBtn?.setAttribute("aria-pressed", String(Boolean(isActive)));
+      document.querySelector(".mrCard")?.classList.toggle("audio-only", Boolean(isActive));
       localStorage.setItem(AUDIO_ONLY_KEY, isActive ? "true" : "false");
       
       // When audio-only is enabled, also collapse the player
@@ -8104,9 +8150,10 @@ const MusicRoomPlayer = (() => {
 
   function toggleLowQuality() {
     try {
-      const lowQualityBtn = document.getElementById("musicLowQualityBtn");
-    const lyricsBtn = document.getElementById("musicLyricsBtn");
+      const lowQualityBtn = document.getElementById("mrLowQualBtn");
+    const lyricsBtn = document.getElementById("mrLyricsToggle");
       const isActive = lowQualityBtn?.classList.toggle("active");
+      lowQualityBtn?.setAttribute("aria-pressed", String(Boolean(isActive)));
       localStorage.setItem(LOW_QUALITY_KEY, isActive ? "true" : "false");
       applyQualitySettings();
     } catch (err) {
@@ -8495,7 +8542,9 @@ const MusicRoomPlayer = (() => {
   function show() {
     initDom();
     if (playerContainer) {
+      playerContainer.style.display = "flex";
       playerContainer.hidden = false;
+      playerContainer.classList.add("modal-visible");
     }
     
     // Start periodic autoplay checking (in case autoplay was blocked)
@@ -8508,7 +8557,9 @@ const MusicRoomPlayer = (() => {
 
   function hide() {
     if (playerContainer) {
+      playerContainer.style.display = "none";
       playerContainer.hidden = true;
+      playerContainer.classList.remove("modal-visible");
     }
     if (player) {
       try { player.stopVideo?.(); } catch (err) { clientLogger.warn("Suppressed client error", err); }
@@ -8537,9 +8588,14 @@ const MusicRoomPlayer = (() => {
   function refreshTimeDisplay() {
     const current = player?.getCurrentTime?.() || 0;
     const total = player?.getDuration?.() || currentVideo?.duration || 0;
-    const line = `${formatClock(current)} / ${formatClock(total)}`;
-    if (timeDisplayEl) timeDisplayEl.textContent = line;
-    if (syncBadgeEl) syncBadgeEl.textContent = `Synced • ${line}`;
+    if (currentTimeEl) currentTimeEl.textContent = formatClock(current);
+    if (durationEl) durationEl.textContent = formatClock(total);
+    if (syncBadgeEl) syncBadgeEl.textContent = "● Synced";
+    const progressFill = document.getElementById("mrProgressFill");
+    if (progressFill) {
+      const pct = total > 0 ? Math.min(100, (current / total) * 100) : 0;
+      progressFill.style.width = `${pct}%`;
+    }
   }
 
   async function playVideo(videoId, title, addedBy, startedAt, artist, albumArt, duration) {
@@ -8564,17 +8620,13 @@ const MusicRoomPlayer = (() => {
       currentVideo = { videoId, title, addedBy, startedAt, artist, albumArt, duration };
       
       // Update current video display
-      if (currentVideoEl) {
-        currentVideoEl.innerHTML = `
-          <div class="musicCurrentTitle">${escapeHtml(title)}</div>
-          <div class="musicCurrentMeta">Added by ${escapeHtml(addedBy)} • ${escapeHtml(currentVideo.artist || "Unknown Artist")}</div>
-        `;
-      }
+      if (currentVideoEl) currentVideoEl.textContent = title || "Nothing playing";
+      if (currentVideoMetaEl) currentVideoMetaEl.textContent = `Added by ${addedBy || "Unknown"}${currentVideo.artist ? ` • ${currentVideo.artist}` : ""}`;
       if (albumArtEl) {
         albumArtEl.src = albumArt || `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
       }
       
-      const lyricsContentEl = document.getElementById("musicLyricsContent");
+      const lyricsContentEl = document.getElementById("mrLyricsContent");
       if (lyricsContentEl) {
         const key = `${String(artist || "").toLowerCase()}::${String(title || "").toLowerCase()}`;
         if (artist && title && lyricsCache.has(key)) {
@@ -8584,7 +8636,7 @@ const MusicRoomPlayer = (() => {
           socket?.emit("music:lyrics:get", { artist, title }, (res) => {
             const text = (res?.lyrics || "").trim() || LYRICS_UNAVAILABLE;
             lyricsCache.set(key, text);
-            if (document.getElementById("musicLyricsContent")) document.getElementById("musicLyricsContent").textContent = text;
+            if (document.getElementById("mrLyricsContent")) document.getElementById("mrLyricsContent").textContent = text;
           });
         } else {
           lyricsContentEl.textContent = LYRICS_UNAVAILABLE;
@@ -8656,21 +8708,22 @@ const MusicRoomPlayer = (() => {
     if (!queueListEl) return;
     
     if (queue.length === 0) {
-      queueListEl.innerHTML = '<div class="musicQueueEmpty">Queue is empty</div>';
+      queueListEl.innerHTML = '<div class="mrQueueEmpty">Queue is empty</div>';
       return;
     }
     
     queueListEl.innerHTML = queue.map((item, index) => `
-      <div class="musicQueueItem">
-        <button class="iconBtn musicQueueRemove" data-id="${item.id}" title="Remove">✖</button>
-        <div class="musicQueueIndex">${index + 1}</div>
-        <div class="musicQueueInfo">
-          <div class="musicQueueTitle">${escapeHtml(item.title)}</div>
-          <div class="musicQueueMeta">Added by ${escapeHtml(item.addedBy)}${item.artist ? ` • ${escapeHtml(item.artist)}` : ""}</div>
+      <div class="mrQueueItem">
+        <div class="mrQueueNum">${index + 1}</div>
+        <div class="mrQueueInfo">
+          <div class="mrQueueTitle">${escapeHtml(item.title)}</div>
+          <div class="mrQueueBy">Added by ${escapeHtml(item.addedBy)}${item.artist ? ` • ${escapeHtml(item.artist)}` : ""}</div>
         </div>
+        <button class="mrQueueRemove" data-id="${item.id}" title="Remove">✖</button>
       </div>
     `).join('');
-    queueListEl.querySelectorAll('.musicQueueRemove').forEach((btn)=>{
+    document.getElementById("mrQueueCount").textContent = `${queue.length} video${queue.length === 1 ? "" : "s"}`;
+    queueListEl.querySelectorAll('.mrQueueRemove').forEach((btn)=>{
       btn.addEventListener('click', ()=> socket?.emit('music:queue:remove', { id: Number(btn.dataset.id) }));
     });
   }
@@ -8678,7 +8731,7 @@ const MusicRoomPlayer = (() => {
   function stop() {
     currentVideo = null;
     if (currentVideoEl) {
-      currentVideoEl.innerHTML = '<div class="musicCurrentTitle">Nothing playing</div>';
+      currentVideoEl.textContent = "Nothing playing";
     }
     if (player) {
       try { player.stopVideo?.(); } catch (err) { clientLogger.warn("Suppressed client error", err); }
@@ -28879,4 +28932,3 @@ composerForm?.addEventListener("submit", e => {
 });
 
 /* === Music Room Experience UI === */
-
