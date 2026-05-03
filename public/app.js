@@ -7983,6 +7983,12 @@ const MusicRoomPlayer = (() => {
     playerContainer = document.getElementById("musicRoomExperienceModal");
     musicModalEl = playerContainer;
     if (!playerContainer) return;
+
+    const container = document.getElementById("music-room-player");
+    if (!container) {
+      console.error("music-room-player container missing");
+    }
+    window.musicPlayer = { container };
     
     currentVideoEl = document.getElementById("musicCurrentVideo");
     queueListEl = document.getElementById("musicQueueList");
@@ -8276,7 +8282,7 @@ const MusicRoomPlayer = (() => {
         playerContainer.style.height = `${newHeight}px`;
         
         // Update video frame size proportionally
-        const videoFrame = document.getElementById("musicPlayerFrame");
+        const videoFrame = document.getElementById("music-room-player");
         if (videoFrame) {
           const videoHeight = newWidth / VIDEO_ASPECT_RATIO;
           videoFrame.style.height = `${videoHeight}px`;
@@ -8341,7 +8347,7 @@ const MusicRoomPlayer = (() => {
     try {
       const audioOnly = localStorage.getItem(AUDIO_ONLY_KEY) === "true";
       const lowQuality = localStorage.getItem(LOW_QUALITY_KEY) === "true";
-      const playerFrame = document.getElementById("musicPlayerFrame");
+      const playerFrame = document.getElementById("music-room-player");
       
       if (audioOnly && playerFrame) {
         playerFrame.style.display = "none";
@@ -8397,7 +8403,7 @@ const MusicRoomPlayer = (() => {
     if (player) return player;
     
     await loadApi();
-    const playerFrame = document.getElementById("musicPlayerFrame");
+    const playerFrame = document.getElementById("music-room-player");
     if (!playerFrame) return null;
     
     player = new YT.Player(playerFrame, {
@@ -8553,6 +8559,11 @@ const MusicRoomPlayer = (() => {
     try {
       initDom();
       show();
+
+      const debugContainer = document.getElementById("music-room-player");
+      if (debugContainer) {
+        console.log("Container size:", debugContainer.offsetWidth, debugContainer.offsetHeight);
+      }
       
       currentVideo = { videoId, title, addedBy, startedAt, artist, albumArt, duration };
       
