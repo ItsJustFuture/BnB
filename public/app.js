@@ -7340,23 +7340,25 @@ function formatTime(ts){
   }
 }
 
-window._ytApiPromise = window._ytApiPromise || null;
+window.__ytApiReady = window.__ytApiReady || null;
 function loadYouTubeApi(){
-  if(window.YT?.Player) return Promise.resolve(window.YT);
-  if(window._ytApiPromise) return window._ytApiPromise;
-  window._ytApiPromise = new Promise((resolve, reject)=>{
-    const prevCb = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = ()=>{ prevCb?.(); resolve(window.YT); };
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (window.__ytApiReady) return window.__ytApiReady;
+  window.__ytApiReady = new Promise((resolve, reject) => {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev?.(); resolve(window.YT); };
     const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-    if(existingScript) return;
-    const script = document.createElement("script");
-    script.src = "https://www.youtube.com/iframe_api";
-    script.async = true;
-    script.onerror = ()=>reject(new Error("yt-api-load-failure"));
-    document.head.appendChild(script);
+    if (!existingScript) {
+      const s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      s.async = true;
+      s.onerror = () => reject(new Error('yt-api-load-failure'));
+      document.head.appendChild(s);
+    }
   });
-  return window._ytApiPromise;
+  return window.__ytApiReady;
 }
+window.loadYouTubeApi = loadYouTubeApi;
 const StickyYouTubePlayer = (()=>{
   let container, playerHolder, titleEl, channelEl, thumbEl, playPauseBtn, muteBtn, volumeSlider, seekSlider, currentTimeEl, durationEl, qualitySelect, minimizeBtn, closeBtn, audioOnlyCheckbox, waveformCanvas;
   let player = null;
@@ -7574,7 +7576,11 @@ const StickyYouTubePlayer = (()=>{
   function ensurePlayer(){
     if(player) return Promise.resolve(player);
     return loadYouTubeApi().then(()=>{
-      player = new YT.Player(playerHolder, {
+      playerHolder.innerHTML = "";
+      const stickyMount = document.createElement("div");
+      stickyMount.style.cssText = "width:100%;height:100%;";
+      playerHolder.appendChild(stickyMount);
+      player = new YT.Player(stickyMount, {
         height: "180",
         width: "320",
         host: "https://www.youtube-nocookie.com",
@@ -8805,7 +8811,7 @@ function buildYouTubePreview(videoId){
   root.className = "ytEmbedHost";
   function tryMount(){
     if(!window.YouTubeEmbed){
-      setTimeout(tryMount, 50);
+      setTimeout(tryMount, 60);
       return;
     }
     const cached = YOUTUBE_META_CACHE.get(videoId) || {};
@@ -18114,15 +18120,9 @@ function joinRoom(room){
       }
     });
     // Show music controls button in music room
-    if (musicControlsBtn) {
-      musicControlsBtn.hidden = false;
-    }
   } else {
     MusicRoomPlayer.hide();
     // Hide music controls button outside music room
-    if (musicControlsBtn) {
-      musicControlsBtn.hidden = true;
-    }
     // Close music controls modal when leaving music room
     closeMusicControlsModal();
   }
@@ -28879,34 +28879,4 @@ composerForm?.addEventListener("submit", e => {
 });
 
 /* === Music Room Experience UI === */
-(function initMusicRoomExperience(){
-  const modal = document.getElementById('musicRoomExperienceModal');
-  const closeBtn = document.getElementById('musicRoomClose');
-  const toggleLyricsBtn = document.getElementById('musicRoomToggleLyrics');
-  const lyricsPanel = document.getElementById('musicRoomLyricsPanel');
-  const queuePanel = document.getElementById('musicQueuePanel');
-  const chatPanel = document.getElementById('musicChatPanel');
-  const musicBtn = document.getElementById('musicControlsBtn');
-  if (!modal) return;
 
-  function openModal(){ modal.hidden = false; }
-  function closeModal(){ modal.hidden = true; }
-
-  musicBtn?.addEventListener('contextmenu', (e) => { e.preventDefault(); openModal(); });
-  closeBtn?.addEventListener('click', closeModal);
-
-  toggleLyricsBtn?.addEventListener('click', () => {
-    const hidden = lyricsPanel.classList.toggle('is-hidden');
-    toggleLyricsBtn.setAttribute('aria-pressed', String(!hidden));
-  });
-
-  document.querySelectorAll('[data-music-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-music-tab]').forEach((b) => b.classList.toggle('active', b === btn));
-      const tab = btn.dataset.musicTab;
-      queuePanel?.classList.toggle('mobile-active', tab === 'queue');
-      lyricsPanel?.classList.toggle('mobile-active', tab === 'lyrics');
-      chatPanel?.classList.toggle('mobile-active', tab === 'chat');
-    });
-  });
-})();

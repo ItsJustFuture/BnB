@@ -724,7 +724,6 @@
 
   <!-- unified media button + pop-up menu -->
   <button class="iconBtn" id="mediaBtn" title="Media" type="button">＋</button>
-  <button aria-label="Music Controls" class="iconBtn" hidden id="musicControlsBtn" title="Music Controls" type="button">🎵</button>
   <button aria-label="Open DnD" class="iconBtn dndNewOpenBtn" hidden id="dndNewOpenBtn" title="Open DnD" type="button">🎲</button>
   <button aria-label="Open DnD Controls" class="iconBtn dndComposerBtn" hidden id="dndComposerBtn" title="DnD Controls" type="button">🎲</button>
   <div class="diceVariantWrap" id="diceVariantWrap">
@@ -3091,115 +3090,18 @@
 
 
 <!-- Music Room Experience -->
-<div class="modal" hidden id="musicRoomExperienceModal" role="dialog" aria-labelledby="musicRoomExperienceTitle" aria-modal="true">
-  <div class="modalCard musicRoomCard">
-    <div class="musicRoomTopBar">
-      <div class="musicRoomNow">
-        <span class="musicRoomDot" aria-hidden="true"></span>
-        <strong id="musicRoomExperienceTitle">Music Room</strong>
-        <span class="musicRoomSyncBadge" id="musicSyncBadge">Synced • 00:00 / 00:00</span>
-      </div>
-      <div class="musicRoomTopActions">
-        <button class="iconBtn" id="musicRoomToggleLyrics" type="button" aria-pressed="true">Lyrics</button>
-        <button aria-label="Close" class="modalClose" id="musicRoomClose" type="button">&times;</button>
-      </div>
+<div class="modal" hidden id="musicRoomExperienceModal" role="dialog" aria-labelledby="musicRoomTitle" aria-modal="true">
+  <div class="mrCard">
+    <div class="mrTopBar">
+      <div class="mrNowInfo"><span class="mrLiveDot" aria-hidden="true"></span><span id="musicRoomTitle">Music Room</span><span class="mrSyncBadge" id="mrSyncBadge">● Synced</span></div>
+      <div class="mrTopActions"><button class="mrIconBtn" id="mrLyricsToggle" type="button" title="Toggle lyrics" aria-pressed="false">📝 Lyrics</button><button class="mrIconBtn" id="mrCloseBtn" type="button" aria-label="Close music room">✕</button></div>
     </div>
-
-    <div class="musicRoomLayout">
-      <aside class="musicQueuePanel" id="musicQueuePanel">
-        <header><strong>Up Next</strong><span>Room Queue</span></header>
-        <div class="musicQueueList" id="musicQueueList"></div>
-      </aside>
-      <section class="musicPlayerSection">
-        <div class="musicAlbumArt"><img id="musicAlbumArtImage" src="/icons/3410/gem-16.png" alt="Album art"></div>
-        <div id="music-room-player"></div>
-        <div class="musicCurrentVideo" id="musicCurrentVideo"><div class="musicCurrentTitle">Nothing playing</div></div>
-        <div class="musicProgressWrap"><div class="musicProgressTime"><span id="musicTimeDisplay">00:00 / 00:00</span></div></div>
-        <div class="musicControlRow">
-          <button class="iconBtn" id="musicCollapseBtn" title="Close music room" aria-label="Close music room">✕</button>
-          <button class="iconBtn" id="musicSkipBtn" title="Skip to next" aria-label="Skip to next">⏭</button>
-          <button class="iconBtn" id="musicAudioOnlyBtn" title="Audio only mode" aria-label="Audio only mode">🎵</button>
-          <button class="iconBtn" id="musicLowQualityBtn" title="Low quality mode" aria-label="Low quality mode">📶</button>
-          <button class="iconBtn" id="musicLyricsBtn" title="Toggle lyrics" aria-label="Toggle lyrics">📝</button>
-        </div>
-      </section>
-      <aside class="musicLyricsPanel" id="musicRoomLyricsPanel">
-        <header><strong>Lyrics</strong><small>Live</small></header>
-        <div class="musicLyricsBody" id="musicLyricsContent"><p>Lyrics unavailable.</p></div>
-      </aside>
+    <div class="mrLayout">
+      <aside class="mrPanel mrQueuePanel" id="mrQueuePanel"><div class="mrPanelHeader"><strong>Up Next</strong><span class="mrMuted" id="mrQueueCount">0 videos</span></div><div class="mrQueueList" id="mrQueueList"><div class="mrQueueEmpty">Queue is empty — paste a YouTube link in chat to add one</div></div></aside>
+      <section class="mrPlayerSection"><div class="mrPlayerWrap" id="music-room-player"></div><div class="mrAlbumArt" id="mrAlbumArt" hidden><img id="mrAlbumImg" src="" alt="Album art"></div><div class="mrNowPlaying"><div class="mrTrackTitle" id="mrTrackTitle">Nothing playing</div><div class="mrTrackMeta" id="mrTrackMeta"></div></div><div class="mrProgressBar"><div class="mrProgressFill" id="mrProgressFill" style="width:0%"></div></div><div class="mrTimeRow"><span id="mrCurrentTime">0:00</span><span id="mrDuration">0:00</span></div><div class="mrControls"><button class="mrIconBtn" id="mrSkipBtn" type="button">⏭</button><button class="mrIconBtn mrToggleBtn" id="mrAudioOnlyBtn" type="button" aria-pressed="false">🎵</button><button class="mrIconBtn mrToggleBtn" id="mrLowQualBtn" type="button" aria-pressed="false">📶</button><div class="mrVolumeRow"><button class="mrIconBtn" id="mrMuteBtn" type="button">🔊</button><input class="mrVolume" id="mrVolumeSlider" type="range" min="0" max="100" value="80"></div><button class="mrIconBtn mrToggleBtn" id="mrLoopBtn" type="button" aria-pressed="false">🔁</button></div><div class="mrVoteRow"><button class="mrVoteBtn" id="mrVoteSkip" type="button"><span>⏭</span> Vote Skip <span class="mrVoteCount" id="mrSkipCount">0</span></button><button class="mrVoteBtn" id="mrVotePause" type="button"><span>⏸</span> Vote Pause <span class="mrVoteCount" id="mrPauseCount">0</span></button><button class="mrVoteBtn" id="mrVoteShuffle" type="button"><span>🔀</span> Shuffle <span class="mrVoteCount" id="mrShuffleCount">0</span></button><button class="mrVoteBtn" id="mrVoteClear" type="button"><span>🗑</span> Clear Queue <span class="mrVoteCount" id="mrClearCount">0</span></button></div></section>
+      <aside class="mrPanel mrLyricsPanel is-hidden" id="mrLyricsPanel"><div class="mrPanelHeader"><strong>Lyrics</strong><span class="mrLiveTag">LIVE</span></div><div class="mrLyricsBody" id="mrLyricsContent"><p class="mrMuted">Lyrics will appear here.</p></div></aside>
     </div>
-
-    <section class="musicChatPanel" id="musicChatPanel">
-      <header><strong>Room Chat</strong></header>
-      <div class="musicChatMessages"><p><b>System:</b> Music playback is shared across the room.</p></div>
-    </section>
-
-    <nav class="musicRoomMobileTabs" aria-label="Music room sections">
-      <button class="active" data-music-tab="queue" type="button">Queue</button>
-      <button data-music-tab="lyrics" type="button">Lyrics</button>
-      <button data-music-tab="chat" type="button">Chat</button>
-    </nav>
-  </div>
-</div>
-
-<!-- Music Controls Modal -->
-<div class="modal" hidden id="musicControlsModal" role="dialog" aria-labelledby="musicControlsTitle" aria-modal="true">
-  <div class="modalCard">
-    <div class="modalHeader">
-      <h2 id="musicControlsTitle">Music Controls</h2>
-      <button aria-label="Close" class="modalClose" id="musicControlsClose" type="button">&times;</button>
-    </div>
-    <div class="modalBody">
-      <div class="musicControlsGrid">
-        <!-- Vote to Skip -->
-        <button class="musicControlBtn" id="voteSkipBtn" type="button">
-          <span class="musicControlIcon">⏭️</span>
-          <span class="musicControlLabel">Vote to Skip</span>
-          <span class="musicControlVotes" id="skipVoteCount">0 votes</span>
-        </button>
-        
-        <!-- Vote to Clear Queue -->
-        <button class="musicControlBtn" id="voteClearQueueBtn" type="button">
-          <span class="musicControlIcon">🗑️</span>
-          <span class="musicControlLabel">Vote to Clear Queue</span>
-          <span class="musicControlVotes" id="clearVoteCount">0 votes</span>
-        </button>
-        
-        <!-- Vote to Pause/Resume -->
-        <button class="musicControlBtn" id="votePauseBtn" type="button">
-          <span class="musicControlIcon">⏸️</span>
-          <span class="musicControlLabel">Vote to Pause</span>
-          <span class="musicControlVotes" id="pauseVoteCount">0 votes</span>
-        </button>
-        
-        <!-- Loop Current Video -->
-        <button class="musicControlBtn" id="loopVideoBtn" type="button">
-          <span class="musicControlIcon">🔁</span>
-          <span class="musicControlLabel">Loop Current Video</span>
-          <span class="musicControlStatus" id="loopStatus">Off</span>
-        </button>
-        
-        <!-- Shuffle Queue -->
-        <button class="musicControlBtn" id="shuffleQueueBtn" type="button">
-          <span class="musicControlIcon">🔀</span>
-          <span class="musicControlLabel">Vote to Shuffle</span>
-          <span class="musicControlVotes" id="shuffleVoteCount">0 votes</span>
-        </button>
-        
-        <!-- Volume Control -->
-        <div class="musicControlVolume">
-          <label for="musicVolumeSlider">
-            <span class="musicControlIcon">🔊</span>
-            <span class="musicControlLabel">Volume</span>
-          </label>
-          <input type="range" id="musicVolumeSlider" min="0" max="100" value="100" step="1">
-          <span class="musicVolumePercent" id="musicVolumePercent">100%</span>
-        </div>
-      </div>
-      <div class="small muted" style="margin-top: 8px; text-align: center;">
-        Most actions require 50% of room to vote. Moderators+ can bypass votes.
-      </div>
-    </div>
+    <nav class="mrMobileTabs" aria-label="Music room sections"><button class="mrTab active" data-mr-tab="player" type="button">▶ Player</button><button class="mrTab" data-mr-tab="queue" type="button">☰ Queue</button><button class="mrTab" data-mr-tab="lyrics" type="button">📝 Lyrics</button></nav>
   </div>
 </div>
 

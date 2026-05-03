@@ -16915,3 +16915,13 @@ body[data-theme="Iris & Lola Neon"] .irisLolaDrawerEasterStar{
   .musicRoomMobileTabs button{height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#121a2b;color:#cdd6e9}
   .musicRoomMobileTabs button.active{background:#312e81;color:#fff}
 }
+
+/* BnB music room overhaul */
+#ytStickyFrame{ width:100%; aspect-ratio:16/9; min-height:220px; }
+.ytSticky.yt-size-large .ytPlayerHolder{ min-height:300px; height:300px; }
+.ytSticky.yt-size-medium .ytPlayerHolder{ min-height:240px; height:240px; }
+.ytSticky.yt-size-small .ytPlayerHolder{ min-height:180px; height:180px; }
+.ytSticky.yt-size-tiny .ytPlayerHolder{ min-height:140px; height:140px; }
+.ytEmbedHost{display:block;width:100%;max-width:480px;margin-top:8px}.ytEmbed{display:block;position:relative;width:100%}
+.ytEmbed .ytPlay,.ytEmbed .ytMute,.ytEmbed .ytFs,.ytEmbed summary{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;cursor:pointer;font-size:15px}
+.ytSeek,.ytVolume{accent-color:#7c3aed}.ytMore{position:relative}.ytMore summary{list-style:none;padding:0 10px}.ytSecondary{position:absolute;right:0;bottom:48px;background:rgba(0,0,10,.88);border-radius:10px;padding:10px;display:grid;gap:8px;min-width:140px;border:1px solid rgba(255,255,255,.1)}
