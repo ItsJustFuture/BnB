@@ -7923,6 +7923,8 @@ const MusicRoomPlayer = (() => {
   let currentVideoEl = null;
   let currentVideoMetaEl = null;
   let queueListEl = null;
+  let miniTitleEl = null;
+  let miniThumbEl = null;
 
   let lyricsPanelEl = null;
   let lyricsVisible = false;
@@ -7940,6 +7942,7 @@ const MusicRoomPlayer = (() => {
   const POSITION_KEY = "music_player_position";
   const SIZE_KEY = "music_player_size";
   const LYRICS_UNAVAILABLE = "Lyrics unavailable.";
+  const TITLE_CLEAN_REGEX = /\((official video|official audio|lyrics?|audio|video)\)|\[(official video|official audio|lyrics?|audio|video|hd|4k)\]/ig;
   
   // Video loading timing constants
   const VIDEO_STOP_DELAY_MS = 200; // Time to wait for video to stop before loading new one
@@ -8007,6 +8010,8 @@ const MusicRoomPlayer = (() => {
     currentVideoEl = document.getElementById("mrTrackTitle");
     currentVideoMetaEl = document.getElementById("mrTrackMeta");
     queueListEl = document.getElementById("mrQueueList");
+    miniTitleEl = document.getElementById("mrMiniTitle");
+    miniThumbEl = document.getElementById("mrMiniThumb");
     lyricsPanelEl = document.getElementById("mrLyricsPanel");
     currentTimeEl = document.getElementById("mrCurrentTime");
     durationEl = document.getElementById("mrDuration");
@@ -8019,6 +8024,7 @@ const MusicRoomPlayer = (() => {
     const audioOnlyBtn = document.getElementById("mrAudioOnlyBtn");
     const lowQualityBtn = document.getElementById("mrLowQualBtn");
     const lyricsBtn = document.getElementById("mrLyricsToggle");
+    const addBtn = document.getElementById("mrAddBtn");
     
     if (collapseBtn) {
       collapseBtn.addEventListener("click", () => {
@@ -8033,6 +8039,21 @@ const MusicRoomPlayer = (() => {
       });
     }
     document.getElementById("mrCloseBtn")?.addEventListener("click", hide);
+    document.getElementById("mrMiniExpand")?.addEventListener("click", show);
+    document.getElementById("mrMiniSkip")?.addEventListener("click", () => socket?.emit("music:next"));
+    document.getElementById("mrMiniPlayPause")?.addEventListener("click", () => {
+      if (!player) return;
+      const isPlaying = player.getPlayerState?.() === window.YT?.PlayerState?.PLAYING;
+      if (isPlaying) socket?.emit("music:pause", { paused: true });
+      else socket?.emit("music:pause", { paused: false });
+    });
+    addBtn?.addEventListener("click", () => document.getElementById("mrAddPanel")?.classList.toggle("is-hidden"));
+    document.getElementById("mrAddSubmit")?.addEventListener("click", addQueueFromInput);
+    document.getElementById("mrAddInput")?.addEventListener("keydown", (e) => { if (e.key === "Enter") addQueueFromInput(); });
+    document.getElementById("mrSearchBtn")?.addEventListener("click", () => {
+      const results = document.getElementById("mrSearchResults");
+      if (results) results.innerHTML = '<div class="mrMuted">// TODO: enable YouTube search when API key is configured</div>';
+    });
     
     if (audioOnlyBtn) {
       audioOnlyBtn.addEventListener("click", () => {
@@ -8569,6 +8590,7 @@ const MusicRoomPlayer = (() => {
       playerContainer.hidden = false;
       playerContainer.classList.add("modal-visible");
       playerContainer.classList.add("minimized");
+      playerContainer.style.background = "transparent";
       return;
     }
     if (playerContainer) {
@@ -8608,10 +8630,32 @@ const MusicRoomPlayer = (() => {
     if (durationEl) durationEl.textContent = formatClock(total);
     if (syncBadgeEl) syncBadgeEl.textContent = "● Synced";
     const progressFill = document.getElementById("mrProgressFill");
+    const miniProgressFill = document.getElementById("mrMiniProgressFill");
+    const miniPlayPause = document.getElementById("mrMiniPlayPause");
     if (progressFill) {
       const pct = total > 0 ? Math.min(100, (current / total) * 100) : 0;
       progressFill.style.width = `${pct}%`;
+      if (miniProgressFill) miniProgressFill.style.width = `${pct}%`;
     }
+    if (miniPlayPause) {
+      const playing = player?.getPlayerState?.() === window.YT?.PlayerState?.PLAYING;
+      miniPlayPause.textContent = playing ? "⏸" : "▶";
+    }
+  }
+
+  function parseSongInfo(rawTitle = "") {
+    const clean = String(rawTitle || "").replace(TITLE_CLEAN_REGEX, "").replace(/\s{2,}/g, " ").trim();
+    const split = clean.split(" - ");
+    if (split.length >= 2) return { artist: split[0].trim(), title: split.slice(1).join(" - ").trim() };
+    return { artist: "", title: clean || rawTitle };
+  }
+
+  function addQueueFromInput() {
+    const input = document.getElementById("mrAddInput");
+    const value = input?.value?.trim();
+    if (!value) return;
+    socket?.emit("chat message", { room: "music", text: value });
+    if (input) input.value = "";
   }
 
   async function playVideo(videoId, title, addedBy, startedAt, artist, albumArt, duration) {
@@ -8634,6 +8678,8 @@ const MusicRoomPlayer = (() => {
       }
       
       currentVideo = { videoId, title, addedBy, startedAt, artist, albumArt, duration };
+      if (miniTitleEl) miniTitleEl.textContent = title || "Nothing playing";
+      if (miniThumbEl) miniThumbEl.src = albumArt || `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`;
       
       // Update current video display
       if (currentVideoEl) currentVideoEl.textContent = title || "Nothing playing";
@@ -8644,12 +8690,15 @@ const MusicRoomPlayer = (() => {
       
       const lyricsContentEl = document.getElementById("mrLyricsContent");
       if (lyricsContentEl) {
-        const key = `${String(artist || "").toLowerCase()}::${String(title || "").toLowerCase()}`;
-        if (artist && title && lyricsCache.has(key)) {
+        const parsed = parseSongInfo(title);
+        const lyricArtist = artist || parsed.artist;
+        const lyricTitle = parsed.title;
+        const key = `${String(lyricArtist || "").toLowerCase()}::${String(lyricTitle || "").toLowerCase()}`;
+        if (lyricArtist && lyricTitle && lyricsCache.has(key)) {
           lyricsContentEl.textContent = lyricsCache.get(key) || LYRICS_UNAVAILABLE;
-        } else if (artist && title) {
+        } else if (lyricArtist && lyricTitle) {
           lyricsContentEl.textContent = "Loading lyrics...";
-          socket?.emit("music:lyrics:get", { artist, title }, (res) => {
+          socket?.emit("music:lyrics:get", { artist: lyricArtist, title: lyricTitle }, (res) => {
             const text = (res?.lyrics || "").trim() || LYRICS_UNAVAILABLE;
             lyricsCache.set(key, text);
             if (document.getElementById("mrLyricsContent")) document.getElementById("mrLyricsContent").textContent = text;
