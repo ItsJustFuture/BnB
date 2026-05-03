@@ -5,11 +5,14 @@
   const activePlayers = new Set();
 
   function loadApi(){
+    if(global.loadYouTubeApi) return global.loadYouTubeApi();
     if(global.YT?.Player) return Promise.resolve(global.YT);
     if(apiPromise) return apiPromise;
     apiPromise = new Promise((resolve, reject)=>{
       const prev = global.onYouTubeIframeAPIReady;
       global.onYouTubeIframeAPIReady = () => { prev?.(); resolve(global.YT); };
+      const existingScript = document.querySelector(`script[src="${API_SRC}"]`);
+      if(existingScript) return;
       const script = document.createElement('script');
       script.src = API_SRC;
       script.async = true;

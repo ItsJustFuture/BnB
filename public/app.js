@@ -7339,10 +7339,27 @@ function formatTime(ts){
     return `${hh}:${mm}`;
   }
 }
+
+window._ytApiPromise = window._ytApiPromise || null;
+function loadYouTubeApi(){
+  if(window.YT?.Player) return Promise.resolve(window.YT);
+  if(window._ytApiPromise) return window._ytApiPromise;
+  window._ytApiPromise = new Promise((resolve, reject)=>{
+    const prevCb = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = ()=>{ prevCb?.(); resolve(window.YT); };
+    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if(existingScript) return;
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = ()=>reject(new Error("yt-api-load-failure"));
+    document.head.appendChild(script);
+  });
+  return window._ytApiPromise;
+}
 const StickyYouTubePlayer = (()=>{
   let container, playerHolder, titleEl, channelEl, thumbEl, playPauseBtn, muteBtn, volumeSlider, seekSlider, currentTimeEl, durationEl, qualitySelect, minimizeBtn, closeBtn, audioOnlyCheckbox, waveformCanvas;
   let player = null;
-  let apiReadyPromise = null;
   let progressTimer = null;
   let currentVideoId = null;
   let pendingAutoplay = false;
@@ -7469,21 +7486,6 @@ const StickyYouTubePlayer = (()=>{
   }
 
 
-  function loadApi(){
-    if(window.YT?.Player) return Promise.resolve(window.YT);
-    if(apiReadyPromise) return apiReadyPromise;
-    apiReadyPromise = new Promise((resolve, reject)=>{
-      const prevCb = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = ()=>{ prevCb?.(); resolve(window.YT); };
-      const script = document.createElement("script");
-      script.src = "https://www.youtube.com/iframe_api";
-      script.async = true;
-      script.onerror = (err)=>reject(err);
-      document.head.appendChild(script);
-    });
-    return apiReadyPromise;
-  }
-
   function initDom(){
     container = document.getElementById("ytSticky");
     if(!container) return;
@@ -7571,7 +7573,7 @@ const StickyYouTubePlayer = (()=>{
 
   function ensurePlayer(){
     if(player) return Promise.resolve(player);
-    return loadApi().then(()=>{
+    return loadYouTubeApi().then(()=>{
       player = new YT.Player(playerHolder, {
         height: "180",
         width: "320",
@@ -7896,7 +7898,6 @@ const MusicRoomPlayer = (() => {
 
   let lyricsPanelEl = null;
   let lyricsVisible = false;
-  let apiReadyPromise = null;
   let currentVideo = null;
   let queue = [];
   let isLoadingVideo = false; // Track if a video is currently being loaded
@@ -7962,21 +7963,6 @@ const MusicRoomPlayer = (() => {
   let listenersAttached = false;
   let mouseMoveHandler = null;
   let mouseUpHandler = null;
-
-  function loadApi() {
-    if (window.YT?.Player) return Promise.resolve(window.YT);
-    if (apiReadyPromise) return apiReadyPromise;
-    apiReadyPromise = new Promise((resolve, reject) => {
-      const prevCb = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => { prevCb?.(); resolve(window.YT); };
-      const script = document.createElement("script");
-      script.src = "https://www.youtube.com/iframe_api";
-      script.async = true;
-      script.onerror = (err) => reject(err);
-      document.head.appendChild(script);
-    });
-    return apiReadyPromise;
-  }
 
   function initDom() {
     if (playerContainer) return;
@@ -8402,13 +8388,17 @@ const MusicRoomPlayer = (() => {
   async function ensurePlayer() {
     if (player) return player;
     
-    await loadApi();
+    await loadYouTubeApi();
     const playerFrame = document.getElementById("music-room-player");
     if (!playerFrame) return null;
     
-    player = new YT.Player(playerFrame, {
-      height: "158",
-      width: "280",
+    playerFrame.innerHTML = "";
+    const mountNode = document.createElement("div");
+    playerFrame.appendChild(mountNode);
+
+    player = new YT.Player(mountNode, {
+      height: "100%",
+      width: "100%",
       host: "https://www.youtube-nocookie.com",
       playerVars: { 
         playsinline: 1, 
@@ -8813,12 +8803,15 @@ const MusicRoomPlayer = (() => {
 function buildYouTubePreview(videoId){
   const root = document.createElement("div");
   root.className = "ytEmbedHost";
-  if(!window.YouTubeEmbed){
-    root.textContent = "YouTube player unavailable.";
-    return root;
+  function tryMount(){
+    if(!window.YouTubeEmbed){
+      setTimeout(tryMount, 50);
+      return;
+    }
+    const cached = YOUTUBE_META_CACHE.get(videoId) || {};
+    new window.YouTubeEmbed(root, { videoId, meta: cached });
   }
-  const cached = YOUTUBE_META_CACHE.get(videoId) || {};
-  new window.YouTubeEmbed(root, { videoId, meta: cached });
+  tryMount();
   return root;
 }
 

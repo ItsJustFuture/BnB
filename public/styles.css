@@ -16867,6 +16867,8 @@ body[data-theme="Iris & Lola Neon"] .irisLolaDrawerEasterStar{
 
 @media (min-width: 769px) and (max-width: 1024px){ .topbar{ padding:0 var(--space-3); } }
 @media (min-width: 1025px){ .topbar{ padding:0 var(--space-3); } }
+.ytEmbedHost{display:block;width:100%;}
+.ytEmbed{display:block;position:relative;width:100%;}
 .ytEmbedAspect{position:relative;aspect-ratio:16/9;width:100%;background:#111;border-radius:12px;overflow:hidden}
 .ytEmbedPoster,.ytEmbedPlayer,.ytEmbedPlayer iframe,.ytEmbedError{position:absolute;inset:0;width:100%;height:100%}
 .ytEmbedPoster{background-size:cover;background-position:center;border:0;cursor:pointer}
