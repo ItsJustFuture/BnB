@@ -8761,40 +8761,17 @@ const MusicRoomPlayer = (() => {
 })();
 
 function buildYouTubePreview(videoId){
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "ytMiniCard";
-  btn.innerHTML = `
-    <div class="ytMiniThumb" aria-hidden="true"></div>
-    <div class="ytMiniMeta">
-      <div class="ytMiniTitle">YouTube video</div>
-      <div class="ytMiniChannel">Tap to play</div>
-    </div>
-    <div class="ytMiniAction">▶ Play</div>
-  `;
-  const thumb = btn.querySelector(".ytMiniThumb");
-  const titleEl = btn.querySelector(".ytMiniTitle");
-  const channelEl = btn.querySelector(".ytMiniChannel");
-
-  function applyMeta(meta){
-    if(!meta) return;
-    if(titleEl) titleEl.textContent = meta.title || "YouTube video";
-    if(channelEl) channelEl.textContent = meta.channel || "YouTube";
-    if(thumb) thumb.style.backgroundImage = meta.thumbnail ? `url(${meta.thumbnail})` : "";
+  const root = document.createElement("div");
+  root.className = "ytEmbedHost";
+  if(!window.YouTubeEmbed){
+    root.textContent = "YouTube player unavailable.";
+    return root;
   }
-
-  btn.addEventListener("click", (e)=>{
-    e.stopPropagation();
-    const cached = YOUTUBE_META_CACHE.get(videoId) || {};
-    StickyYouTubePlayer.loadVideo(videoId, cached, { autoplay:true });
-  });
-
-  const cachedMeta = YOUTUBE_META_CACHE.get(videoId);
-  if(cachedMeta) applyMeta(cachedMeta);
-  else fetchYouTubeMeta(videoId).then(meta => { if(meta) applyMeta(meta); });
-
-  return btn;
+  const cached = YOUTUBE_META_CACHE.get(videoId) || {};
+  new window.YouTubeEmbed(root, { videoId, meta: cached });
+  return root;
 }
+
 
 function diceFace(val){ return DICE_FACES[val - 1] || val || ""; }
 function fmtAbs(ts){
