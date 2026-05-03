@@ -3088,6 +3088,62 @@
   </div>
 </div>
 
+
+
+<!-- Music Room Experience -->
+<div class="modal" hidden id="musicRoomExperienceModal" role="dialog" aria-labelledby="musicRoomExperienceTitle" aria-modal="true">
+  <div class="modalCard musicRoomCard">
+    <div class="musicRoomTopBar">
+      <div class="musicRoomNow">
+        <span class="musicRoomDot" aria-hidden="true"></span>
+        <strong id="musicRoomExperienceTitle">Music Room</strong>
+        <span class="musicRoomSyncBadge" id="musicSyncBadge">Synced • 00:42</span>
+      </div>
+      <div class="musicRoomTopActions">
+        <button class="iconBtn" id="musicRoomToggleLyrics" type="button" aria-pressed="true">Lyrics</button>
+        <button aria-label="Close" class="modalClose" id="musicRoomClose" type="button">&times;</button>
+      </div>
+    </div>
+
+    <div class="musicRoomLayout">
+      <aside class="musicQueuePanel" id="musicQueuePanel">
+        <header><strong>Up Next</strong><span>8 tracks</span></header>
+        <ul class="musicQueueList">
+          <li class="active" draggable="true"><img src="/icons/3410/gem-01.png" alt=""><div><strong>Midnight Echo</strong><span>Luma Sky • added by Kai</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
+          <li draggable="true"><img src="/icons/3410/gem-02.png" alt=""><div><strong>Velvet Neon</strong><span>Norell • added by Ivy</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
+          <li draggable="true"><img src="/icons/3410/gem-03.png" alt=""><div><strong>Pulse Lane</strong><span>Astra • added by Ren</span></div><div class="musicQueueActions"><button>▲</button><button>✕</button></div></li>
+        </ul>
+      </aside>
+      <section class="musicPlayerSection">
+        <div class="musicAlbumArt"><img src="/icons/3410/gem-16.png" alt="Album art"></div>
+        <div class="musicTrackMeta"><h3>Midnight Echo</h3><p>Luma Sky • Night Shift Deluxe</p></div>
+        <div class="musicProgressWrap"><div class="musicProgressBar"><span style="width:42%"></span></div><div class="musicProgressTime"><span>1:24</span><span>3:20</span></div></div>
+        <div class="musicControlRow"><button>⏮</button><button class="play">⏯</button><button>⏭</button><label>🔊<input type="range" min="0" max="100" value="70"></label><button>⚙</button></div>
+      </section>
+      <aside class="musicLyricsPanel" id="musicLyricsPanel">
+        <header><strong>Lyrics</strong><label><input type="checkbox" id="lyricsSyncToggle" checked> Sync</label></header>
+        <div class="musicLyricsBody">
+          <p>City lights are fading slow</p>
+          <p class="active">Hold the line, don’t let it go</p>
+          <p>Hearts in rhythm, breathing sound</p>
+          <p>All our shadows hit the ground</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="musicChatPanel" id="musicChatPanel">
+      <header><strong>Room Chat</strong></header>
+      <div class="musicChatMessages"><p><b>Nora:</b> this drop is perfect</p><p><b>Axel:</b> syncing lyrics now 🎤</p></div>
+    </section>
+
+    <nav class="musicRoomMobileTabs" aria-label="Music room sections">
+      <button class="active" data-music-tab="queue" type="button">Queue</button>
+      <button data-music-tab="lyrics" type="button">Lyrics</button>
+      <button data-music-tab="chat" type="button">Chat</button>
+    </nav>
+  </div>
+</div>
+
 <!-- Music Controls Modal -->
 <div class="modal" hidden id="musicControlsModal" role="dialog" aria-labelledby="musicControlsTitle" aria-modal="true">
   <div class="modalCard">
