@@ -16932,10 +16932,18 @@ body[data-theme="Iris & Lola Neon"] .irisLolaDrawerEasterStar{
 /* ── Music Room Modal ── */
 #musicRoomExperienceModal { align-items: center; justify-content: center; }
 .mrCard { width:min(1400px,97vw); height:min(92vh,860px); display:flex; flex-direction:column; background:linear-gradient(145deg,#0d1117,#0a0e1a); border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:0 24px 80px rgba(0,0,0,.6); overflow:hidden; }
-.modal-visible#musicRoomExperienceModal.minimized{align-items:flex-end;justify-content:flex-end;pointer-events:none;padding:12px}
+.modal-visible#musicRoomExperienceModal.minimized{align-items:flex-end;justify-content:flex-end;pointer-events:none;padding:12px;background:transparent!important}
 .modal-visible#musicRoomExperienceModal.minimized .mrCard{pointer-events:auto;width:min(420px,calc(100vw - 24px));height:auto;border-radius:14px}
 .modal-visible#musicRoomExperienceModal.minimized .mrLayout,.modal-visible#musicRoomExperienceModal.minimized .mrMobileTabs{display:none!important}
 .modal-visible#musicRoomExperienceModal.minimized .mrTopBar{border-bottom:0}
+.modal-visible#musicRoomExperienceModal.minimized .mrCard{display:none}
+.mrMiniBar{display:none;position:fixed;right:14px;bottom:14px;z-index:380;align-items:center;gap:10px;background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px;min-width:320px;max-width:min(520px,calc(100vw - 20px));pointer-events:auto}
+.modal-visible#musicRoomExperienceModal.minimized .mrMiniBar{display:flex}
+.mrMiniBar img{width:54px;height:54px;border-radius:8px;object-fit:cover;background:#000}
+.mrMiniMeta{min-width:0;flex:1}.mrMiniMeta>#mrMiniTitle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:#e2e8f0}
+.mrMiniProgress{height:4px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;margin-top:6px}.mrMiniProgress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#06b6d4)}
+.mrAddPanel,.mrSearchPanel{padding:8px;display:flex;gap:6px;align-items:center}.mrAddPanel.is-hidden{display:none}.mrAddPanel input,.mrSearchPanel input{flex:1;background:#0b1220;border:1px solid rgba(255,255,255,.14);color:#e2e8f0;border-radius:8px;padding:8px}
+.mrSearchPanel{display:block}.mrSearchPanel>div{margin-top:6px;font-size:12px}
 .mrTopBar { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:52px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.07); }
 .mrNowInfo{display:flex;align-items:center;gap:10px;font-weight:600;color:#e2e8f0}.mrLiveDot{width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;flex-shrink:0}.mrSyncBadge{font-size:12px;padding:3px 10px;border-radius:99px;background:rgba(52,211,153,.13);color:#6ee7b7}.mrTopActions{display:flex;align-items:center;gap:8px}
 .mrIconBtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:36px;height:36px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.05);color:#cbd5e1;font-size:14px;cursor:pointer;white-space:nowrap}.mrIconBtn:hover{background:rgba(255,255,255,.12);color:#fff}.mrToggleBtn[aria-pressed=\"true\"],.mrToggleBtn.active{background:rgba(139,92,246,.3);border-color:#7c3aed;color:#c4b5fd}
