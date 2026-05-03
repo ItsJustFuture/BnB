@@ -16890,6 +16890,8 @@ body[data-theme="Iris & Lola Neon"] .irisLolaDrawerEasterStar{
 .musicQueueList img{width:40px;height:40px;border-radius:8px}.musicQueueList strong{display:block;font-size:13px}.musicQueueList span{font-size:12px;color:#a8b0c3}
 .musicQueueActions button{background:transparent;border:0;color:#d6ddf0;cursor:pointer}
 .musicPlayerSection{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px}
+.musicPlayerSection #musicPlayerFrame{width:min(920px,100%);aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.musicPlayerSection #musicPlayerFrame iframe{width:100%!important;height:100%!important}
 .musicAlbumArt{width:min(100%,420px);aspect-ratio:1}.musicAlbumArt img{width:100%;height:100%;object-fit:cover;border-radius:22px;box-shadow:0 16px 35px rgba(0,0,0,.5)}
 .musicTrackMeta h3{margin:0;font-size:30px}.musicTrackMeta p{margin:4px 0 0;color:#9aa5bc}
 .musicProgressWrap{width:min(560px,100%)}.musicProgressBar{height:6px;background:rgba(255,255,255,.14);border-radius:999px;overflow:hidden}.musicProgressBar span{display:block;height:100%;background:linear-gradient(90deg,#14b8a6,#8b5cf6)}
