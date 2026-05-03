@@ -28853,3 +28853,36 @@ composerForm?.addEventListener("submit", e => {
   e.preventDefault();
   e.stopPropagation();
 });
+
+/* === Music Room Experience UI === */
+(function initMusicRoomExperience(){
+  const modal = document.getElementById('musicRoomExperienceModal');
+  const closeBtn = document.getElementById('musicRoomClose');
+  const toggleLyricsBtn = document.getElementById('musicRoomToggleLyrics');
+  const lyricsPanel = document.getElementById('musicLyricsPanel');
+  const queuePanel = document.getElementById('musicQueuePanel');
+  const chatPanel = document.getElementById('musicChatPanel');
+  const musicBtn = document.getElementById('musicControlsBtn');
+  if (!modal) return;
+
+  function openModal(){ modal.hidden = false; }
+  function closeModal(){ modal.hidden = true; }
+
+  musicBtn?.addEventListener('contextmenu', (e) => { e.preventDefault(); openModal(); });
+  closeBtn?.addEventListener('click', closeModal);
+
+  toggleLyricsBtn?.addEventListener('click', () => {
+    const hidden = lyricsPanel.classList.toggle('is-hidden');
+    toggleLyricsBtn.setAttribute('aria-pressed', String(!hidden));
+  });
+
+  document.querySelectorAll('[data-music-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-music-tab]').forEach((b) => b.classList.toggle('active', b === btn));
+      const tab = btn.dataset.musicTab;
+      queuePanel?.classList.toggle('mobile-active', tab === 'queue');
+      lyricsPanel?.classList.toggle('mobile-active', tab === 'lyrics');
+      chatPanel?.classList.toggle('mobile-active', tab === 'chat');
+    });
+  });
+})();
