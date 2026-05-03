@@ -94,11 +94,11 @@
     async initPlayer(autoplay=false, force=false){
       if(!this.videoId){ this.showError('Invalid YouTube URL'); return; }
       if(this.player && !force){ if(autoplay) this.player.playVideo?.(); return; }
-      this.poster.hidden = true; this.playerHost.hidden = false; this.err.hidden = true;
+      this.poster.hidden = Boolean(autoplay); this.playerHost.hidden = false; this.err.hidden = true;
       try{
         const YT = await loadApi();
         this.booted = true;
-        this.player = new YT.Player(this.playerHost, { videoId:this.videoId, playerVars: PLAYER_VARS, events:{ onReady:()=>{ if(autoplay) this.player.playVideo?.(); this.populateSelectors(); this.sync(); }, onStateChange:(e)=>{ if(e.data===YT.PlayerState.PLAYING) pauseOtherPlayers(this.player); this.sync(); }, onError:()=> this.showError('Video unavailable') } });
+        this.player = new YT.Player(this.playerHost, { videoId:this.videoId, playerVars: PLAYER_VARS, events:{ onReady:()=>{ if(autoplay) this.player.playVideo?.(); this.populateSelectors(); this.sync(); }, onStateChange:(e)=>{ if(e.data===YT.PlayerState.PLAYING){ this.poster.hidden = true; pauseOtherPlayers(this.player); } this.sync(); }, onError:()=> this.showError('Video unavailable') } });
         activePlayers.add(this.player);
       }catch{ this.showError('Failed to load YouTube API'); }
     }
