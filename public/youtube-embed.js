@@ -1,6 +1,6 @@
 (function(global){
   const API_SRC = "https://www.youtube.com/iframe_api";
-  const PLAYER_VARS = { playsinline: 1, modestbranding: 1, rel: 0, controls: 0, enablejsapi: 1, origin: window.location.origin };
+  const PLAYER_VARS = { playsinline: 1, modestbranding: 1, rel: 0, controls: 1, enablejsapi: 1, origin: window.location.origin };
   let apiPromise = null;
   const activePlayers = new Set();
 
@@ -112,6 +112,21 @@
     togglePlay(){
       const s = this.player?.getPlayerState?.();
       if(s === global.YT?.PlayerState?.PLAYING) this.player.pauseVideo?.(); else this.player.playVideo?.();
+    }
+    setVolume(volume){
+      const value = Math.max(0, Math.min(100, Number(volume) || 0));
+      this.volume.value = String(value);
+      this.player?.setVolume?.(value);
+      if(value > 0) this.player?.unMute?.();
+      this.sync();
+    }
+    setPlaybackRate(rate){
+      const value = Number(rate) || 1;
+      this.player?.setPlaybackRate?.(value);
+      this.speed.value = String(value);
+    }
+    getAvailableQualityLevels(){
+      return this.player?.getAvailableQualityLevels?.() || [];
     }
     sync(){
       clearTimeout(this.progressTimer);
